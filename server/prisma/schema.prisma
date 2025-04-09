@@ -1,0 +1,46 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Task {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  priority    Int?
+  category    String?
+  dueDate     DateTime?
+  completed   Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+
+  timers      Timer[]
+  pomodoros   Pomodoro[]
+}
+
+model Timer {
+  id      Int      @id @default(autoincrement())
+  taskId  Int
+  start   DateTime
+  end     DateTime?
+
+  task    Task     @relation(fields: [taskId], references: [id])
+}
+
+model Pomodoro {
+  id           Int      @id @default(autoincrement())
+  taskId       Int
+  start        DateTime
+  duration     Int      // in seconds
+  breakLength  Int      // in seconds
+
+  task         Task     @relation(fields: [taskId], references: [id])
+}
+
+

@@ -30,7 +30,6 @@ const DailySummary = () => {
 
   return (
     <Container className="my-4">
-      <h3>Today’s Time Summary</h3>
       {loading ? (
         <Spinner animation="border" />
       ) : summary.length === 0 ? (

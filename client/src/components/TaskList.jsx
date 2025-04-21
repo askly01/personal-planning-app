@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Button, Form, Spinner } from 'react-bootstrap';
+import { Spinner, Row, Col } from 'react-bootstrap';
+import TaskCard from './TaskCard';
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
   const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editingDraft, setEditingDraft] = useState({});
   const [activeTimers, setActiveTimers] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +25,6 @@ const TaskList = () => {
     fetchTasks();
   }, []);
 
-  // Update elapsed timer every second
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveTimers((prev) => {
@@ -41,20 +42,26 @@ const TaskList = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleEdit = async (id, field, value) => {
-    const updated = tasks.map((task) =>
-      task.id === id ? { ...task, [field]: value } : task
-    );
-    setTasks(updated);
+  const handleEditChange = (field, value) => {
+    setEditingDraft((prev) => ({ ...prev, [field]: value }));
+  };
 
+  const handleEditClick = (task) => {
+    setEditingTaskId(task.id);
+    setEditingDraft({ ...task });
+  };
+
+  const handleSave = async (id) => {
     try {
       await fetch(`/tasks/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: value }),
+        body: JSON.stringify(editingDraft),
       });
+      fetchTasks();
+      setEditingTaskId(null);
     } catch (err) {
-      console.error('Failed to update task:', err);
+      console.error('Failed to save edits:', err);
     }
   };
 
@@ -76,7 +83,6 @@ const TaskList = () => {
       });
 
       const data = await res.json();
-
       if (res.ok) {
         const start = new Date(data.start);
         setActiveTimers((prev) => ({
@@ -109,89 +115,29 @@ const TaskList = () => {
     }
   };
 
-  const formatElapsed = (ms) => {
-    const totalSec = Math.floor(ms / 1000);
-    const min = Math.floor(totalSec / 60);
-    const sec = totalSec % 60;
-    return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-  };
-
   if (loading) return <Spinner animation="border" />;
+
+  if (tasks.length === 0) return <p>No tasks yet. Add one to get started!</p>;
 
   return (
     <div>
-      {tasks.length === 0 ? (
-        <p>No tasks yet. Add one to get started!</p>
-      ) : (
-        tasks.map((task) => (
-          <Card key={task.id} className="mb-3 shadow-sm">
-            <Card.Body>
-              {editingTaskId === task.id ? (
-                <>
-                  <Form.Control
-                    type="text"
-                    className="mb-2"
-                    value={task.title}
-                    onChange={(e) => handleEdit(task.id, 'title', e.target.value)}
-                  />
-                  <Form.Control
-                    as="textarea"
-                    rows={2}
-                    className="mb-2"
-                    value={task.description || ''}
-                    onChange={(e) => handleEdit(task.id, 'description', e.target.value)}
-                  />
-                  <Form.Control
-                    type="number"
-                    min="1"
-                    max="5"
-                    className="mb-3"
-                    value={task.priority || ''}
-                    onChange={(e) => handleEdit(task.id, 'priority', e.target.value)}
-                  />
-                </>
-              ) : (
-                <>
-                  <h5 className="mb-1">{task.title}</h5>
-                  <div className="text-muted mb-2">{task.description || 'No description'}</div>
-                  <div className="text-muted small">Priority: {task.priority || '-'}</div>
-                </>
-              )}
-
-              <div className="d-flex flex-wrap gap-2 mt-3 align-items-center">
-                {activeTimers[task.id] ? (
-                  <>
-                    <Button variant="outline-danger" size="sm" onClick={() => stopTimer(task.id)}>
-                      Stop Timer
-                    </Button>
-                    <span className="text-muted small">
-                      ⏱ {formatElapsed(activeTimers[task.id]?.elapsed || 0)}
-                    </span>
-                  </>
-                ) : (
-                  <Button variant="outline-primary" size="sm" onClick={() => startTimer(task.id)}>
-                    Start Timer
-                  </Button>
-                )}
-
-                {editingTaskId === task.id ? (
-                  <Button variant="success" size="sm" onClick={() => setEditingTaskId(null)}>
-                    Save
-                  </Button>
-                ) : (
-                  <Button variant="secondary" size="sm" onClick={() => setEditingTaskId(task.id)}>
-                    Edit
-                  </Button>
-                )}
-
-                <Button variant="danger" size="sm" onClick={() => handleDelete(task.id)}>
-                  Delete
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        ))
-      )}
+      <Row className="g-3">
+        {tasks.map((task) => (
+          <Col key={task.id} xs={12} sm={6} lg={4}>
+            <TaskCard
+              task={editingTaskId === task.id ? editingDraft : task}
+              isEditing={editingTaskId === task.id}
+              activeTimer={activeTimers[task.id]}
+              onEditChange={handleEditChange}
+              onStartTimer={() => startTimer(task.id)}
+              onStopTimer={() => stopTimer(task.id)}
+              onEditClick={() => handleEditClick(task)}
+              onSave={() => handleSave(task.id)}
+              onDeleteClick={() => handleDelete(task.id)}
+            />
+          </Col>
+        ))}
+      </Row>
     </div>
   );
 };

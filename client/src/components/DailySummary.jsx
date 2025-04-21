@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, ListGroup, Spinner, Container } from 'react-bootstrap';
+import { Card, Row, Col, Spinner, Container } from 'react-bootstrap';
 
 const formatDuration = (ms) => {
   const minutes = Math.floor(ms / 60000);
@@ -35,13 +35,20 @@ const DailySummary = () => {
       ) : summary.length === 0 ? (
         <p>No time tracked yet today.</p>
       ) : (
-        <ListGroup>
+        <Row className="g-3">
           {summary.map((item, index) => (
-            <ListGroup.Item key={index}>
-              <strong>{item.taskTitle}</strong> — {formatDuration(item.totalTimeMs)}
-            </ListGroup.Item>
+            <Col key={index} xs={12} sm={6} md={4}>
+              <Card className="h-100 shadow-sm">
+                <Card.Body>
+                  <Card.Title className="fs-6">{item.taskTitle}</Card.Title>
+                  <Card.Text className="text-muted">
+                    <strong>Total Time:</strong> {formatDuration(item.totalTimeMs)}
+                  </Card.Text>
+                </Card.Body>
+              </Card>
+            </Col>
           ))}
-        </ListGroup>
+        </Row>
       )}
     </Container>
   );

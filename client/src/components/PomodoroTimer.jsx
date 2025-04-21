@@ -3,9 +3,9 @@ import { Card, Button, Form, ProgressBar } from 'react-bootstrap';
 
 const PomodoroTimer = ({ tasks }) => {
   const [selectedTaskId, setSelectedTaskId] = useState('');
-  const [phase, setPhase] = useState('focus'); // 'focus' or 'break'
-  const [duration, setDuration] = useState(25 * 60); // seconds
-  const [breakLength, setBreakLength] = useState(5 * 60); // seconds
+  const [phase, setPhase] = useState('focus');
+  const [duration, setDuration] = useState(25 * 60);
+  const [breakLength, setBreakLength] = useState(5 * 60);
   const [remaining, setRemaining] = useState(duration);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -29,31 +29,30 @@ const PomodoroTimer = ({ tasks }) => {
     return () => clearInterval(interval);
   }, [isRunning, phase]);
 
-	const handlePhaseEnd = async () => {
-		setIsRunning(false);
+  const handlePhaseEnd = async () => {
+    setIsRunning(false);
 
-		if (phase === 'focus') {
-			try {
-			await fetch('/pomodoros', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-				taskId: parseInt(selectedTaskId),
-				duration,
-				breakLength,
-				}),
-			});
-			alert('Focus session complete! Break time 🎉');
-			} catch (err) {
-			console.error('Failed to log pomodoro:', err);
-			}
-			setPhase('break');
-		} else {
-			alert('Break over! Ready to focus again 💪');
-			setPhase('focus');
-		}
-	};
-
+    if (phase === 'focus') {
+      try {
+        await fetch('/pomodoros', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskId: parseInt(selectedTaskId),
+            duration,
+            breakLength,
+          }),
+        });
+        alert('Focus session complete! Break time 🎉');
+      } catch (err) {
+        console.error('Failed to log pomodoro:', err);
+      }
+      setPhase('break');
+    } else {
+      alert('Break over! Ready to focus again 💪');
+      setPhase('focus');
+    }
+  };
 
   const handleStart = () => {
     if (!selectedTaskId) {
@@ -74,17 +73,20 @@ const PomodoroTimer = ({ tasks }) => {
     return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
-  const progress = ((phase === 'focus' ? duration : breakLength) - remaining) /
-                   (phase === 'focus' ? duration : breakLength) * 100;
+  const progress =
+    ((phase === 'focus' ? duration : breakLength) - remaining) /
+    (phase === 'focus' ? duration : breakLength) *
+    100;
 
   return (
-    <Card className="my-4 shadow-sm">
-      <Card.Body>
-        <h4 className="mb-3">Pomodoro Timer 🍅</h4>
+    <Card className="shadow-sm">
+      <Card.Body className="p-3">
+        <div className="mb-2 fw-semibold fs-6">Pomodoro Timer 🍅</div>
 
-        <Form.Group className="mb-3">
-          <Form.Label>Select Task</Form.Label>
+        <Form.Group className="mb-2">
+          <Form.Label className="fw-normal fs-7 mb-1">Select Task</Form.Label>
           <Form.Select
+            size="sm"
             value={selectedTaskId}
             onChange={(e) => setSelectedTaskId(e.target.value)}
             disabled={isRunning}
@@ -98,20 +100,23 @@ const PomodoroTimer = ({ tasks }) => {
           </Form.Select>
         </Form.Group>
 
-        <div className="text-center mb-3">
-          <h1>{formatTime(remaining)}</h1>
-          <div className="text-muted">{phase === 'focus' ? 'Focus time' : 'Break time'}</div>
+        <div className="d-flex justify-content-center align-items-center gap-2 mb-2">
+          <div className="fs-3 fw-bold">{formatTime(remaining)}</div>
+          <div className="text-muted small">
+            {phase === 'focus' ? 'Focus time' : 'Break time'}
+          </div>
         </div>
 
-        <ProgressBar now={progress} className="mb-3" />
+
+        <ProgressBar now={progress} className="mb-2" />
 
         <div className="d-flex gap-2 justify-content-center">
           {isRunning ? (
-            <Button variant="danger" onClick={() => setIsRunning(false)}>Pause</Button>
+            <Button variant="danger" size="sm" onClick={() => setIsRunning(false)}>Pause</Button>
           ) : (
-            <Button variant="primary" onClick={handleStart}>Start</Button>
+            <Button variant="primary" size="sm" onClick={handleStart}>Start</Button>
           )}
-          <Button variant="secondary" onClick={handleReset}>Reset</Button>
+          <Button variant="secondary" size="sm" onClick={handleReset}>Reset</Button>
         </div>
       </Card.Body>
     </Card>

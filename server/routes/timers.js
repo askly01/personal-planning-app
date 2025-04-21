@@ -50,42 +50,66 @@ router.post('/stop', async (req, res) => {
   }
 });
 
-// get all timer logs for today, grouped by task
+
 router.get('/today', async (req, res) => {
-	try {
-		const todayTimers = await prisma.timer.findMany({
-			where: {
-				start: {
-					gte: startOfDay(new Date()),
-					lte: endOfDay(new Date()),
-				},
-			},
-			include: { task: true },
-		});
+  try {
+    const [timers, pomodoros] = await Promise.all([
+      prisma.timer.findMany({
+        where: {
+          start: {
+            gte: startOfDay(new Date()),
+            lte: endOfDay(new Date()),
+          },
+        },
+        include: { task: true },
+      }),
+      prisma.pomodoro.findMany({
+        where: {
+          start: {
+            gte: startOfDay(new Date()),
+            lte: endOfDay(new Date()),
+          },
+        },
+        include: { task: true },
+      }),
+    ]);
 
-		const summary = {};
+    const summary = {};
 
-		todayTimers.forEach((timer) => {
-			const taskId = timer.taskId;
-			const duration = timer.end 
-				? new Date(timer.end) - new Date(timer.start) 
-				: 0;
+    timers.forEach((timer) => {
+      const taskId = timer.taskId;
+      const duration = timer.end ? new Date(timer.end) - new Date(timer.start) : 0;
 
-			if (!summary[taskId]) {
-				summary[taskId] = {
-					taskTitle: timer.task.title,
-					totalTimeMs: 0,
-				};
-			}
+      if (!summary[taskId]) {
+        summary[taskId] = {
+          taskTitle: timer.task.title,
+          totalTimeMs: 0,
+          pomodoroCount: 0,
+        };
+      }
 
-			summary[taskId].totalTimeMs += duration;
-		});
+      summary[taskId].totalTimeMs += duration;
+    });
 
-		res.json(Object.values(summary));
-	} catch (err) {
-		console.error(err);
-		res.status(500).json({ error: 'Could not fetch summary' });
-	}
+    pomodoros.forEach((pom) => {
+      const taskId = pom.taskId;
+      if (!summary[taskId]) {
+        summary[taskId] = {
+          taskTitle: pom.task.title,
+          totalTimeMs: 0,
+          pomodoroCount: 0,
+        };
+      }
+
+      summary[taskId].pomodoroCount += 1;
+    });
+
+    res.json(Object.values(summary));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not fetch summary' });
+  }
 });
+
 
 module.exports = router;

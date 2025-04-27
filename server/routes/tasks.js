@@ -61,4 +61,39 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// toggle complete task
+router.patch('/:id/toggle', async (req, res) => {
+  // coerce the route param to an integer
+  const idParam = req.params.id;
+  const taskId = parseInt(idParam, 10);
+
+  if (isNaN(taskId)) {
+    return res.status(400).json({ error: 'Invalid task ID' });
+  }
+
+  try {
+    // find the task by integer ID
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+    });
+
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    // flip completed and persist
+    const updatedTask = await prisma.task.update({
+      where: { id: taskId },
+      data: { completed: !task.completed },
+    });
+
+    res.json(updatedTask);
+  } catch (error) {
+    console.error('Error toggling task completion', error);
+    res.status(500).json({ error: 'Error toggling task completion' });
+  }
+});
+
+
+
 module.exports = router;

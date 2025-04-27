@@ -11,12 +11,15 @@ const TaskCard = ({
   onSave,
   onEditClick,
   onDeleteClick,
+  onToggleComplete,
 }) => {
   const formatElapsed = (ms) => {
     const totalSec = Math.floor(ms / 1000);
     const min = Math.floor(totalSec / 60);
     const sec = totalSec % 60;
-    return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+    return `${min.toString().padStart(2, '0')}:${sec
+      .toString()
+      .padStart(2, '0')}`;
   };
 
   const formatDate = (isoDate) => {
@@ -90,10 +93,17 @@ const TaskCard = ({
 
       <Card.Footer className="d-flex flex-wrap gap-2 justify-content-between">
         <div className="d-flex gap-2 align-items-center">
+          <Form.Check
+            type="checkbox"
+            label="Done"
+            checked={task.completed}
+            onChange={(e) => onToggleComplete(e.target.checked)}
+            className="me-2"
+          />
           {activeTimer ? (
             <>
               <Button variant="outline-danger" size="sm" onClick={onStopTimer}>
-                Stop Timer
+                Stop
               </Button>
               <span className="text-muted small">
                 ⏱ {formatElapsed(activeTimer.elapsed)}
@@ -101,7 +111,7 @@ const TaskCard = ({
             </>
           ) : (
             <Button variant="outline-primary" size="sm" onClick={onStartTimer}>
-              Start Timer
+              Start 
             </Button>
           )}
         </div>
@@ -114,7 +124,7 @@ const TaskCard = ({
             {isEditing ? 'Save' : 'Edit'}
           </Button>
           <Button variant="danger" size="sm" onClick={onDeleteClick}>
-            Delete
+             🗑️
           </Button>
         </div>
       </Card.Footer>

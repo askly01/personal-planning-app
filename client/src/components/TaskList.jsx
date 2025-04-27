@@ -25,6 +25,7 @@ const TaskList = () => {
     fetchTasks();
   }, []);
 
+  // keep timers ticking…
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveTimers((prev) => {
@@ -42,6 +43,24 @@ const TaskList = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // --- NEW: toggle complete immediately ---
+  const toggleComplete = async (taskId) => {
+    try {
+      const res = await fetch(`/tasks/${taskId}/toggle`, {
+        method: 'PATCH',
+      });
+      if (!res.ok) throw new Error('Toggle failed');
+      const updated = await res.json();
+      // update only that task in state
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? updated : t))
+      );
+    } catch (err) {
+      console.error('Failed to toggle completion:', err);
+    }
+  };
+
+  // existing handlers…
   const handleEditChange = (field, value) => {
     setEditingDraft((prev) => ({ ...prev, [field]: value }));
   };
@@ -68,7 +87,7 @@ const TaskList = () => {
   const handleDelete = async (id) => {
     try {
       await fetch(`/tasks/${id}`, { method: 'DELETE' });
-      setTasks(tasks.filter((t) => t.id !== id));
+      setTasks((prev) => prev.filter((t) => t.id !== id));
     } catch (err) {
       console.error('Failed to delete task:', err);
     }
@@ -81,7 +100,6 @@ const TaskList = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ taskId }),
       });
-
       const data = await res.json();
       if (res.ok) {
         const start = new Date(data.start);
@@ -102,7 +120,6 @@ const TaskList = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ taskId }),
       });
-
       if (res.ok) {
         setActiveTimers((prev) => {
           const copy = { ...prev };
@@ -116,8 +133,8 @@ const TaskList = () => {
   };
 
   if (loading) return <Spinner animation="border" />;
-
-  if (tasks.length === 0) return <p>No tasks yet. Add one to get started!</p>;
+  if (tasks.length === 0)
+    return <p>No tasks yet. Add one to get started!</p>;
 
   return (
     <div>
@@ -134,6 +151,7 @@ const TaskList = () => {
               onEditClick={() => handleEditClick(task)}
               onSave={() => handleSave(task.id)}
               onDeleteClick={() => handleDelete(task.id)}
+              onToggleComplete={() => toggleComplete(task.id)}  // ← pass it here
             />
           </Col>
         ))}

@@ -30,7 +30,7 @@ model Timer {
   start   DateTime
   end     DateTime?
 
-  task    Task     @relation(fields: [taskId], references: [id])
+  task    Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 }
 
 model Pomodoro {
